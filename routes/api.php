@@ -1,8 +1,8 @@
 <?php
 
-use App\Http\Controllers\Api\BaseController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\CategoryController;
 
 /*
 |--------------------------------------------------------------------------
@@ -15,4 +15,4 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/category', [BaseController::class, 'getCategory']);
+Route::get('/category', [CategoryController::class, 'getCategory']);
