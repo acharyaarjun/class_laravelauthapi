@@ -15,4 +15,4 @@ use App\Http\Controllers\Api\CategoryController;
 |
 */
 
-Route::get('/category', [CategoryController::class, 'getCategory']);
+Route::resource('/category', CategoryController::class);

@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('product_image');
             $table->text('product_description')->nullable();
             $table->decimal('product_cost');
+            $table->enum('status', ['Y', 'N'])->default('Y');
 
             $table->foreign('category_id')->references('id')->on('categories')->onDelete('cascade');
             $table->timestamps();
