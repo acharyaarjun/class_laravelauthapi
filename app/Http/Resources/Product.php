@@ -14,15 +14,16 @@ class Product extends JsonResource
      */
     public function toArray($request)
     {
+        $status = $this->status;
         return [
             'id' => $this->id,
             'category_id' => $this->category_id,
             'product_title' => $this->product_title,
             'slug' => $this->slug,
-            'product_image' => $this->product_image,
+            'product_image' => $this->product_image != null? asset('site/uploads/product/'.$this->product_image) : null,
             'product_description' => $this->product_description,
             'product_cost' => $this->product_cost,
-            'status' => (string) ($this->status == "Y")?"Y":"N",
+            'status' => $status,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

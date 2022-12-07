@@ -18,4 +18,5 @@ use App\Http\Controllers\Api\ProductController;
 
 Route::resource('/category', CategoryController::class);
 Route::resource('/product', ProductController::class);
+Route::post('product/{id}', [ProductController::class, 'update']);
 

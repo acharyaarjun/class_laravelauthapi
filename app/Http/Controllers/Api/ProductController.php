@@ -6,9 +6,10 @@ use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Validator;
-use App\Http\Controllers\Api\BaseController as BaseController;
 use App\Http\Resources\Product as ResourcesProduct;
+use App\Http\Controllers\Api\BaseController as BaseController;
 
 class ProductController extends BaseController
 {
@@ -19,6 +20,9 @@ class ProductController extends BaseController
      */
     public function index()
     {
+        $products = Product::orderby('id', 'desc')->get();
+
+        return $this->sendSuccessResponse(ResourcesProduct::collection($products), 'Product fetched succeffully!');
     }
 
     /**
@@ -73,7 +77,8 @@ class ProductController extends BaseController
         $product->product_image = $product_name;
         $product->save();
 
-        return $this->sendSuccessResponse(new ResourcesProduct($product), 'Product Added Successfully!');
+        $outputproduct = Product::find($product->id);
+        return $this->sendSuccessResponse(new ResourcesProduct($outputproduct), 'Product Added Successfully!');
     }
 
     /**
@@ -84,7 +89,11 @@ class ProductController extends BaseController
      */
     public function show($id)
     {
-        return response()->json("yeuta dekhauni dekhauni function");
+        $product = Product::find($id);
+        if (is_null($product)) {
+            return $this->sendErrorResponse(['Product not found'], 'Product with this id doensont exists');
+        }
+        return $this->sendSuccessResponse(new ResourcesProduct($product), 'Product fetched Successfully!');
     }
 
     /**
@@ -96,7 +105,74 @@ class ProductController extends BaseController
      */
     public function update(Request $request, $id)
     {
-        return response()->json("update dekhauni dekhauni function");
+        // dd($id);
+        $validator = Validator::make($request->all(), [
+            // 'product_title' => ['required',  Rule::unique('products')->ignore($id),],
+            'product_title' => 'required|unique:products,product_title,' . $id,
+            'product_cost' => ['required', 'numeric'],
+            'product_image' => ['mimes:jpeg,jpg,png,gif'],
+            'category_id' => ['required', 'integer'],
+            'status' => ['in:Y,N'],
+        ]);
+        if ($validator->fails()) {
+            return $this->sendErrorResponse($validator->errors(), 'Validation Fail', 400);
+        }
+
+        $product = Product::find($id);
+
+        if (is_null($product)) {
+            return $this->sendErrorResponse(['product not found'], 'Product with this id doensont exists');
+        }
+
+        $category_id = $request->input('category_id');
+        $category = Category::find($category_id);
+
+
+
+        if (is_null($category)) {
+            return $this->sendErrorResponse(['category not found'], 'Category with this id doensont exists');
+        }
+
+        $latest_product = Product::orderby('id', 'desc')->limit(1)->first();
+
+        $product_title = $request->input('product_title');
+        $slug = Str::slug($product_title);
+        $product_cost = $request->input('product_cost');
+        $product_description = $request->input('product_description');
+        $status = $request->input('status');
+
+        $product_image = $request->file('product_image');
+
+        if ($product_image) {
+            $extension = $product_image->getClientOriginalExtension();
+            if (is_null($latest_product)) {
+                $product_name = $slug . '.' . $extension;
+            } else {
+                $product_name = $slug . '-' . $latest_product->id . '.' . $extension;
+            }
+
+            if ($product->product_image) {
+                unlink('site/uploads/product/' . $product->product_image);
+            }
+
+            $product_image->move('site/uploads/product/', $product_name);
+        }
+
+        $product->product_title = $product_title;
+        $product->category_id = $category_id;
+        $product->slug = $slug;
+        $product->product_cost = $product_cost;
+        $product->product_description = $product_description;
+        $product->status = $status;
+
+        if ($product_image) {
+            $product->product_image = $product_name;
+        }
+
+        $product->save();
+
+        $outputproduct = Product::find($product->id);
+        return $this->sendSuccessResponse(new ResourcesProduct($outputproduct), 'Product Edited Successfully!');
     }
 
     /**
@@ -107,6 +183,15 @@ class ProductController extends BaseController
      */
     public function destroy($id)
     {
-        return response()->json("delete dekhauni dekhauni function");
+        $product = Product::find($id);
+        if (is_null($product)) {
+            return $this->sendErrorResponse(['Product not found'], 'Product with this id doensont exists');
+        }
+
+        if ($product->product_image) {
+            unlink('site/uploads/product/' . $product->product_image);
+        }
+        $product->delete();
+        return $this->sendSuccessResponse(['Done'], 'Product deleted successfully!');
     }
 }
